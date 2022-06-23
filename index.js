@@ -21,9 +21,6 @@ const run = async () => {
 
         // AUTH API
 
-        
-
-
         // Products / Orders API
 
         app.get("/products", async (req, res) => {
@@ -73,7 +70,7 @@ const run = async () => {
         app.get("/orders", async (req, res) => {
             const email = req.query?.email;
             console.log(email);
-            const query = { email };
+            const query = {};
             const cursor = orderCollections.find(query);
             const orders = await cursor.toArray();
             res.send(orders);
