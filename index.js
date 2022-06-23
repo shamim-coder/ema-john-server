@@ -15,12 +15,13 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 const run = async () => {
     try {
         await client.connect();
-        const productCollection = client.db("db_ema_john").collection("products");
+        const productCollections = client.db("db_ema_john").collection("products");
+        const orderCollections = client.db("db_ema_john").collection("orders");
 
         app.get("/products", async (req, res) => {
             const page = parseInt(req.query.page);
             const size = parseInt(req.query.size);
-            const cursor = productCollection.find({});
+            const cursor = productCollections.find({});
 
             let products;
 
@@ -38,7 +39,7 @@ const run = async () => {
 
         // counts total number of products
         app.get("/nop", async (req, res) => {
-            const count = await productCollection.estimatedDocumentCount({});
+            const count = await productCollections.estimatedDocumentCount({});
             res.json({ count });
         });
 
@@ -46,16 +47,32 @@ const run = async () => {
         app.post("/product_by_keys", async (req, res) => {
             const keys = req.body;
             const ids = keys.map((id) => ObjectId(id));
-            console.log(ids);
             const query = { _id: { $in: ids } };
-            const cursor = productCollection.find(query);
+            const cursor = productCollections.find(query);
             const products = await cursor.toArray();
             res.send(products);
+        });
+
+        // Manage Order
+
+        app.post("/orders", async (req, res) => {
+            const orderDetails = req.body;
+            const result = orderCollections.insertOne(orderDetails);
+            res.send(result);
+        });
+
+        // get orders
+        app.get("/orders", async (req, res) => {
+            const query = {};
+            const cursor = orderCollections.find(query);
+            const orders = await cursor.toArray();
+            res.send(orders);
         });
     } finally {
         // client.close();
     }
 };
+
 run().catch(console.dir);
 
 app.get("/", (req, res) => res.send("Hello John! Ema waiting for your response"));
