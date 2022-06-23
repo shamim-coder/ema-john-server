@@ -11,20 +11,20 @@ app.use(cors());
 app.use(express.json());
 
 // Middle Tier
-const verifyJWT = (req, res, next) => {
-    const authHeader = req.headers.authorization;
+const verifyJWT = async (req, res, next) => {
+    const authHeader = req.headers["authorization"];
     if (!authHeader) {
         return res.status(401).send({ message: "unauthorized" });
     }
     const token = authHeader.split(" ")[1];
-    jwt.verify(token, process.env.JWT_TOKEN_KEY, (err, decoded) => {
+    jwt.verify(token, process.env.JWT_TOKEN_KEY, async (err, decoded) => {
         if (err) {
             return res.status(403).send("forbidden");
         } else {
             req.decoded = decoded;
         }
+        await next();
     });
-    next();
 };
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@ema-john.n18lm9w.mongodb.net/?retryWrites=true&w=majority`;
