@@ -75,6 +75,6 @@ const run = async () => {
 
 run().catch(console.dir);
 
-app.get("/", (req, res) => res.send("Hello John! Ema waiting for your response"));
+app.get("/", (req, res) => res.send("Hello John! Ema waiting for your response!"));
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
