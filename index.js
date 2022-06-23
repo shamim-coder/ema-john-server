@@ -1,20 +1,31 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-// const jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 8888;
 
-const corsOptions = {
-    origin: "*",
-    credentials: true, //access-control-allow-credentials:true
-    optionSuccessStatus: 200,
-};
-
 // middleware
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
+
+// Middle Tier
+const verifyJWT = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: "unauthorized" });
+    }
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token, process.env.JWT_TOKEN_KEY, (err, decoded) => {
+        if (err) {
+            return res.status(403).send("forbidden");
+        } else {
+            req.decoded = decoded;
+        }
+    });
+    next();
+};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@ema-john.n18lm9w.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
@@ -26,6 +37,14 @@ const run = async () => {
         const orderCollections = client.db("db_ema_john").collection("orders");
 
         // AUTH API
+
+        app.post("/login", async (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.JWT_TOKEN_KEY, {
+                expiresIn: "1d",
+            });
+            res.send({ token });
+        });
 
         // Products / Orders API
 
@@ -73,13 +92,23 @@ const run = async () => {
         });
 
         // get orders
-        app.get("/orders", async (req, res) => {
-            // const email = req.query.email;
-            // console.log(email);
-            const query = {};
-            const cursor = orderCollections.find(query);
-            const orders = await cursor.toArray();
-            res.send(orders);
+        app.get("/orders", verifyJWT, async (req, res) => {
+            const decodedEmail = req.decoded.email;
+            const email = req.query.email;
+            if (email) {
+                if (decodedEmail === email) {
+                    const query = { email };
+                    const cursor = orderCollections.find(query);
+                    const orders = await cursor.toArray();
+                    res.send(orders);
+                } else {
+                    res.status(403).send("forbidden");
+                }
+            } else {
+                const cursor = orderCollections.find({});
+                const orders = await cursor.toArray();
+                res.send(orders);
+            }
         });
     } finally {
         // client.close();
