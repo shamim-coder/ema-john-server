@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
@@ -17,6 +18,13 @@ const run = async () => {
         await client.connect();
         const productCollections = client.db("db_ema_john").collection("products");
         const orderCollections = client.db("db_ema_john").collection("orders");
+
+        // AUTH API
+
+        
+
+
+        // Products / Orders API
 
         app.get("/products", async (req, res) => {
             const page = parseInt(req.query.page);
@@ -63,7 +71,9 @@ const run = async () => {
 
         // get orders
         app.get("/orders", async (req, res) => {
-            const query = {};
+            const email = req.query?.email;
+            console.log(email);
+            const query = { email };
             const cursor = orderCollections.find(query);
             const orders = await cursor.toArray();
             res.send(orders);
